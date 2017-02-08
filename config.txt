@@ -1,0 +1,2 @@
+trimmomatic	SE SLIDINGWINDOW:4:10 MINLEN:100
+spades	-t 40 -k 105

@@ -1,0 +1,131 @@
+#########################################
+Nome: META_pipeline.pl
+Versão: beta
+Autor: Laura Rabelo Leite (contato laura.leite@cpqrr.fiocruz.br)
+Data da documentação atual: 12/2016
+Máquina com instalação disponível para uso na Fiocruz: tucunare.cebio.org
+#########################################
+
+Descrição: 
+	Fluxo de trabalho em bioinformática para análise de sequências metagenômicas. Esse fluxo engloba o controle de qualidade das sequências, montagem, predição gênica, anotação taxômica das sequências filtradas, anotação funcional dos genes preditos e criação de um banco de dados mysql com a abudância de organismos e vias metabólicas. Este fluxo foi criado para dados de bibliotecas do tipo shotgun, sequenciadas nas plataformas Ion Torrent e Illumina. Podem ser trabalhadas bibliotecas pareadas ou não.
+
+#########################################
+
+Modo de uso via linha de comando:
+
+META_pipeline_CL.pl <diretório_com_arquivos_de_entrada> <arquivo_de_configuração> <diretório_de_saída> 
+
+Modo de uso com widget (componentes de interface gráfica de usuário): 
+
+META_pipeline_CL.pl
+(Clicar nos botões para selecionar os diretórios de entrada e saída, e o arquivo de configuração. Somente depois clicar em “Run”. Outra tela abrirá caso queira continuar enviando novos trabalhos com diferentes arquivos. Caso queira interromper o trabalho atual ou sair do programa clicar em “Exit”)
+
+#########################################
+
+Pré requisitos
+
+- python 2.6 ou posterior
+
+- perl 5.10 ou posterior
+
+Programas (colocar todos os programas no path da máquina incluindo os executáveis da pasta /bin e os arquivos na pasta /utils)
+
+- trimmomatic
+
+(http://www.usadellab.org/cms/uploads/supplementary/Trimmomatic/TrimmomaticManual_
+
+V0.32.pdf)
+
+- SPAdes (http://spades.bioinf.spbau.ru/release3.5.0/manual.html)
+
+- MetaGeneMark(http://topaz.gatech.edu/GeneMark/license_download.cgi)
+
+- Diamond (http://ab.inf.uni-
+
+tuebingen.de/data/software/diamond/download/public/manual.pdf)
+
+- seqtk (https://github.com/lh3/seqtk)
+
+- blast2lca (https://github.com/emepyc/Blast2lca)
+
+- bowtie2 (http://bowtie-bio.sourceforge.net/bowtie2/manual.shtml)
+
+- samtools (http://www.htslib.org/doc/samtools.html)
+
+- bedtools (https://github.com/arq5x/bedtools2/releases)
+
+Sistema de gerenciamento de banco de dados
+
+- mysql 5.1.73
+
+Bancos de dados públicos
+
+- NCBI nt (ftp://ftp.ncbi.nlm.nih.gov/blast/db/nt*.tar.gz)
+
+- nucl_acc2tax-Nov2016.abin (http://ab.inf.uni-tuebingen.de/data/software/megan6/download/welcome.html)
+
+- gi_taxid_nucl.bin (download junto ao programa blast2lca)
+
+- nodes.dmp (download junto ao programa blast2lca)
+
+- names.dmp (download junto ao programa blast2lca)
+
+- UEKO (http://maxixe.icb.ufmg.br/ueko/download/ueko.fasta.gz)
+
+- KEGG_hier.2016.01.05 (http://www.genome.jp/kegg-bin/get_htext?br08902.keg)
+
+#########################################
+
+
+Arquivos de entrada:
+
+- Diretório contendo arquivos  no formato .fastq que correspondem aos arquivos brutos do sequenciamento. Até o momento o programa roda apenas uma biblioteca por rodada. Para evitar erros coloque na pasta apenas os arquivos correspondentes à biblioteca indicada no arquivo de configuração.
+
+- Arquivo texto de configuração da rodada,  contendo parâmetros que precisam ser incluídos ou modificados nos programas utilizados no fluxo de trabalho. Para parâmetros não especificados serão utilizadas as opções default dos programas.
+
+- Diretório, com permissão de escrita, para os arquivos de saída.
+
+
+Como montar o arquivo de configuração:
+
+	O arquivo precisa conter obrigatoriamente na primeira linha o tipo de biblioteca a ser analisada: PE para pair-end ou SE para single-end.
+ 
+	Demais parâmetros são opcionais e podem ser estabelecidos a partir da segunda linha do arquivo de configuração, sempre escrevendo: 
+NOME_DO_PROGRAMA : NOME_DO_PARÂMETRO VALOR.
+	Ex:
+ diamond: -e 0.1 --id 50
+
+	Todos os parâmetros dos programas  trimmomatic, spades, gmhmm, diamond, megablast, blastm8_filter e bowtie2 podem ser modificados ou incluídos. Observe que essa decisão pode influenciar os resultados, bem como produzir erros inerentes às combinações mínimas de parâmetros para cada programa. 
+
+
+#########################################
+
+
+Arquivos de saída:
+
+	O presente fluxo de trabalho gera as saídas padrões dos programas  trimmomatic, spades, gmhmm, diamond, megablast, blastm8_filter e bowtie2 (vide documentações específicas para mais informações sobre essas saídas). Além disso gera os seguintes arquivos tabulares que podem ser utilizados para criação da base de dados mysql:
+ 
+O arquivo gene.txt apresenta os seguintes campos consecutivos: 
+
+
+CONTIG: Identificador do contig montado.
+START_MATCH: Posição inicial do mapeamento da sequência filtrada no contig.
+END_MATCH: Posição final do mapeamento da sequência filtrada no contig.
+READ_ID: Identificador da sequência filtrada.
+GENE_ID: Identificador do gene predito que está contido na região mapeada do contig.
+GENE_LENGTH: Tamanho do gene predito.
+
+Esse arquivo é posteriormente utilizado para o cálculo de abundância de genes, taxons e funções.
+
+O arquivo tax.txt apresenta os seguintes campos consecutivos: 
+
+READ_ID: Identificador da sequência filtrada.
+TAX_ID: Identificador do táxon (NCBI taxonomy) que representa o menor ancestral comum entre todos os hits (com qualidade mínima) para a sequência filtrada.
+
+O arquivo ko.txt apresenta os seguintes campos consecutivos: 
+
+GENE_ID:  Identificador do gene predito nos contigs.
+KO_ID: Identificador KEGG  que representa o  melhor hits (com qualidade mínima) para o gene.
+
+	Para criação do banco é necessário ter o mysql instalado e que seu usuário tenha permissão de criar bancos de dados.  Para tal basta digitar:
+cat createdb.sql | mysql -u<usuario> -p<senha>

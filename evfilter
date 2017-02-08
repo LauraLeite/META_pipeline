@@ -1,0 +1,65 @@
+#!/usr/local/ActivePerl/bin/perl
+#
+#
+#
+
+use strict;
+use Getopt::Long;
+use Data::Dumper;
+
+
+my $USAGE=<<USAGE;
+
+  * evfilter *
+
+   given a stream of blast m8 format tab-delimited data keeps only lines that have evalue  <= 1e-5 (by default)
+
+   options:
+
+    -e, -evalue       whatever value you want for the evalue (default= 1e-5)
+    -h, -help         display this help
+
+  usage:
+   cat blastresult.txt | evfilter -e 1e-10
+
+   # BLAST -m 8 Fields: 
+   0    1   Query id, 
+   1    2   Subject id, 
+   2    3   % identity, 
+   3    4   alignment length, 
+   4    5   mismatches, 
+   5    6   gap openings, 
+   6    7   q. start, 
+   7    8   q. end, 
+   8    9   s. start, 
+   9    10  s. end, 
+   10   11  e-value, 
+   11   12  bit score
+
+  see also:
+      idfilter, alnfilter
+
+   - for getting this help -
+   
+    evfilter -h
+    evfilter --help
+
+USAGE
+
+my ($evalue,$help,$format);
+$evalue = 1e-5;
+
+my   $result = GetOptions ("e|evalue=s"    => \$evalue,      
+			   "h|help"        => \$help
+			   );
+
+die $USAGE if $help;
+
+
+while (my $line = <>){
+	my @array=split(/\t/,$line);
+	next if $array[10] > $evalue;
+	print $line;
+}
+
+
