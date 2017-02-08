@@ -1,0 +1,2 @@
+# META_pipeline
+Fluxo de trabalho em bioinformática para análise de sequências metagenômicas. Esse fluxo engloba o controle de qualidade das sequências, montagem, predição gênica, anotação taxômica das sequências filtradas, anotação funcional dos genes preditos e criação de um banco de dados mysql com a abudância de organismos e vias metabólicas. Este fluxo foi criado para dados de bibliotecas do tipo shotgun, sequenciadas nas plataformas Ion Torrent e Illumina. Podem ser trabalhadas bibliotecas pareadas ou não.
